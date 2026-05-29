@@ -1,0 +1,431 @@
+﻿{
+    "name":  "Hotel AI Assistant - Webhook RAG Agent - Sanitized Template",
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "chat",
+                                         "responseMode":  "lastNode",
+                                         "options":  {
+                                                         "responseHeaders":  {
+                                                                                 "entries":  [
+                                                                                                 {
+                                                                                                     "name":  "Access-Control-Allow-Origin",
+                                                                                                     "value":  "*"
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "name":  "Access-Control-Allow-Methods",
+                                                                                                     "value":  "POST, OPTIONS"
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "name":  "Access-Control-Allow-Headers",
+                                                                                                     "value":  "Content-Type"
+                                                                                                 }
+                                                                                             ]
+                                                                             }
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  2,
+                      "position":  [
+                                       1408,
+                                       -32
+                                   ],
+                      "id":  "f1c13709-96c5-47fa-b32b-801dcc9f04f0",
+                      "name":  "Webhook",
+                      "webhookId":  "hotel-chat-webhook"
+                  },
+                  {
+                      "parameters":  {
+                                         "promptType":  "define",
+                                         "text":  "={{ $json.body.message }}",
+                                         "options":  {
+                                                         "systemMessage":  "You are Aria, the friendly AI concierge for The Grand Palace Hotel in Hyderabad.\n\nYour responsibilities:\n1. Answer guest questions about the hotel using the knowledge base tool.\n2. Recommend rooms when guests mention budget, number of guests, or stay duration.\n3. Always be warm, concise, and professional.\n\nWhen recommending a room, always include:\n- Room name\n- Price per night (in â‚¹)\n- Top 3 amenities\n- A short reason why it suits the guest\u0027s needs\n\nIf the answer is not available in the knowledge base, reply:\n\"I\u0027ll connect you with our front desk for this. You can reach them at +91-40-1234-5678 or email stay@grandpalace.com\"\n\nNever make up information. Only use facts retrieved from the knowledge base tool."
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.agent",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       1616,
+                                       -32
+                                   ],
+                      "id":  "f47cd173-6f9d-4bc1-8290-8eddbfc02e85",
+                      "name":  "AI Agent"
+                  },
+                  {
+                      "parameters":  {
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+                      "typeVersion":  1,
+                      "position":  [
+                                       1536,
+                                       176
+                                   ],
+                      "id":  "3e77f562-ea75-4d67-9494-ba3ee25afff5",
+                      "name":  "Gemini 2.5 Flash"
+                  },
+                  {
+                      "parameters":  {
+
+                                     },
+                      "type":  "n8n-nodes-base.manualTrigger",
+                      "typeVersion":  1,
+                      "position":  [
+                                       336,
+                                       -32
+                                   ],
+                      "id":  "49ad975c-b0ca-45b7-8066-e9a852cbfbbb",
+                      "name":  "When clicking \u0027Execute workflow\u0027"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "return items.map(item =\u003e {\n    const data = item.json;\n    let content = \"\";\n\n    if (data.Question \u0026\u0026 data.Answer) {\n        // FAQ format\n        content = `FAQ\\nQ: ${data.Question}\\nA: ${data.Answer}`;\n    } else if (data[\u0027Room Name\u0027] \u0026\u0026 data[\u0027Price Per Night\u0027]) {\n        // Hotel room format\n        content = `Room: ${data[\u0027Room Name\u0027]}\\nPrice: ${data[\u0027Price Per Night\u0027]}/night\\nCapacity: ${data[\u0027Max Guests\u0027] || \u0027N/A\u0027} guests\\nAmenities: ${data[\u0027Amenities\u0027] || \u0027N/A\u0027}\\nDescription: ${data[\u0027Description\u0027] || \u0027N/A\u0027}`;\n    } else if (data[\u0027Topic\u0027] \u0026\u0026 data[\u0027Details\u0027]) {\n        // General hotel info format\n        content = `Topic: ${data[\u0027Topic\u0027]}\\nDetails: ${data[\u0027Details\u0027]}`;\n    } else {\n        // Fallback\n        content = JSON.stringify(data);\n    }\n\n    return {\n        json: {\n            values: [],\n            content: content\n        }\n    };\n});\n"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       752,
+                                       -32
+                                   ],
+                      "id":  "a33d2651-4f04-4cf1-815d-a7590bb5f269",
+                      "name":  "Code"
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "insert",
+                                         "tableName":  {
+                                                           "__rl":  true,
+                                                           "value":  "documents",
+                                                           "mode":  "list",
+                                                           "cachedResultName":  "documents"
+                                                       },
+                                         "options":  {
+                                                         "queryName":  "match_documents"
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+                      "typeVersion":  1.3,
+                      "position":  [
+                                       960,
+                                       -32
+                                   ],
+                      "id":  "7dd2a936-5b31-4c77-b65d-4fde97bdfae2",
+                      "name":  "Supabase Vector Store"
+                  },
+                  {
+                      "parameters":  {
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       1120,
+                                       176
+                                   ],
+                      "id":  "15541f47-2d96-47ee-989d-d17a3373b15e",
+                      "name":  "Default Data Loader"
+                  },
+                  {
+                      "parameters":  {
+                                         "sessionIdType":  "customKey",
+                                         "sessionKey":  "={{ $(\u0027Webhook\u0027).item.json.body.sessionId }}"
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+                      "typeVersion":  1.3,
+                      "position":  [
+                                       1696,
+                                       176
+                                   ],
+                      "id":  "69e2047f-45c5-4597-ac52-759d0d7b500b",
+                      "name":  "Postgres Chat Memory"
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "retrieve-as-tool",
+                                         "toolDescription":  "Call this tool to fetch hotel information including room types, pricing, amenities, check-in/check-out times, cancellation policy, nearby attractions, and FAQs about The Grand Palace Hotel.",
+                                         "tableName":  {
+                                                           "__rl":  true,
+                                                           "value":  "documents",
+                                                           "mode":  "list",
+                                                           "cachedResultName":  "documents"
+                                                       },
+                                         "options":  {
+                                                         "queryName":  "match_documents"
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+                      "typeVersion":  1.3,
+                      "position":  [
+                                       1872,
+                                       208
+                                   ],
+                      "id":  "28ae160c-4008-406c-8c21-9b71509803ff",
+                      "name":  "Knowledge Base"
+                  },
+                  {
+                      "parameters":  {
+                                         "content":  "## Knowledge Base â†’ Supabase Vector\n\n**Run this section ONCE** to seed the hotel knowledge base.\n\n1. Update the Google Sheet (or swap for HTTP Request node)\n2. Code node formats rows into hotel content structure\n3. Vector store embeds and saves to Supabase\n\nSheet columns needed:\n- For rooms: Room Name, Price Per Night, Max Guests, Amenities, Description\n- For FAQs: Question, Answer\n- For policies: Topic, Details",
+                                         "height":  448,
+                                         "width":  992
+                                     },
+                      "type":  "n8n-nodes-base.stickyNote",
+                      "position":  [
+                                       320,
+                                       -544
+                                   ],
+                      "typeVersion":  1,
+                      "id":  "9fdb960c-b0d9-49d5-97f6-9f29a6053939",
+                      "name":  "Sticky Note"
+                  },
+                  {
+                      "parameters":  {
+                                         "documentId":  {
+                                                            "__rl":  true,
+                                                            "value":  "REPLACE_WITH_GOOGLE_SHEET_ID",
+                                                            "mode":  "list",
+                                                            "cachedResultName":  "REPLACE_WITH_GOOGLE_SHEET_NAME",
+                                                            "cachedResultUrl":  "REPLACE_WITH_GOOGLE_SHEET_URL"
+                                                        },
+                                         "sheetName":  {
+                                                           "__rl":  true,
+                                                           "value":  "REPLACE_WITH_SHEET_NAME_OR_GID",
+                                                           "mode":  "list",
+                                                           "cachedResultName":  "REPLACE_WITH_TAB_NAME",
+                                                           "cachedResultUrl":  "REPLACE_WITH_GOOGLE_SHEET_TAB_URL"
+                                                       },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4.7,
+                      "position":  [
+                                       544,
+                                       -32
+                                   ],
+                      "id":  "d2aa9ff6-b1cd-4bd7-acb9-9fa355f6932e",
+                      "name":  "Get row(s) in sheet"
+                  },
+                  {
+                      "parameters":  {
+                                         "content":  "## Hotel AI Agent (Webhook-based)\n\n**Webhook endpoint:** POST /webhook/chat\n\n**Request body:**\n```json\n{\n  \"message\": \"What rooms are available?\",\n  \"sessionId\": \"user-unique-id-123\"\n}\n```\n\n**Response:**\n```json\n{\n  \"reply\": \"We have 3 room types...\",\n  \"sessionId\": \"user-unique-id-123\",\n  \"timestamp\": \"2024-01-01T00:00:00Z\"\n}\n```\n\n**Model:** Gemini 2.5 Flash (free)\n**Memory:** Postgres (per sessionId)\n**RAG:** Supabase Vector Store",
+                                         "height":  464,
+                                         "width":  832,
+                                         "color":  5
+                                     },
+                      "type":  "n8n-nodes-base.stickyNote",
+                      "position":  [
+                                       1408,
+                                       -560
+                                   ],
+                      "typeVersion":  1,
+                      "id":  "2344d669-8a3c-41fd-adf0-04f0e7bf89ec",
+                      "name":  "Sticky Note1"
+                  },
+                  {
+                      "parameters":  {
+
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+                      "typeVersion":  1,
+                      "position":  [
+                                       1968,
+                                       416
+                                   ],
+                      "id":  "cbd81e51-dcc7-4127-b6a9-59affe3f3ff1",
+                      "name":  "Embeddings Google Gemini"
+                  },
+                  {
+                      "parameters":  {
+
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+                      "typeVersion":  1,
+                      "position":  [
+                                       912,
+                                       176
+                                   ],
+                      "id":  "3f14f189-af97-4c60-83aa-023b766c2db1",
+                      "name":  "Embeddings Google Gemini1",
+                      "alwaysOutputData":  false,
+                      "executeOnce":  false
+                  },
+                  {
+                      "parameters":  {
+                                         "assignments":  {
+                                                             "assignments":  [
+                                                                                 {
+                                                                                     "id":  "reply",
+                                                                                     "name":  "reply",
+                                                                                     "value":  "={{ $json.output }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "sessionId",
+                                                                                     "name":  "sessionId",
+                                                                                     "value":  "={{ $(\u0027Webhook\u0027).item.json.body.sessionId }}",
+                                                                                     "type":  "string"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "timestamp",
+                                                                                     "name":  "timestamp",
+                                                                                     "value":  "={{ $now.toISO() }}",
+                                                                                     "type":  "string"
+                                                                                 }
+                                                                             ]
+                                                         },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.set",
+                      "typeVersion":  3.4,
+                      "position":  [
+                                       1904,
+                                       -32
+                                   ],
+                      "id":  "6b6e91bd-ff05-4c8a-b2f2-9b9ed974b001",
+                      "name":  "Format Response"
+                  }
+              ],
+    "pinData":  {
+
+                },
+    "connections":  {
+                        "Webhook":  {
+                                        "main":  [
+                                                     [
+                                                         {
+                                                             "node":  "AI Agent",
+                                                             "type":  "main",
+                                                             "index":  0
+                                                         }
+                                                     ]
+                                                 ]
+                                    },
+                        "Gemini 2.5 Flash":  {
+                                                 "ai_languageModel":  [
+                                                                          [
+                                                                              {
+                                                                                  "node":  "AI Agent",
+                                                                                  "type":  "ai_languageModel",
+                                                                                  "index":  0
+                                                                              }
+                                                                          ]
+                                                                      ]
+                                             },
+                        "AI Agent":  {
+                                         "main":  [
+                                                      {
+                                                          "node":  "Format Response",
+                                                          "type":  "main",
+                                                          "index":  0
+                                                      }
+                                                  ]
+                                     },
+                        "When clicking \u0027Execute workflow\u0027":  {
+                                                                           "main":  [
+                                                                                        [
+                                                                                            {
+                                                                                                "node":  "Get row(s) in sheet",
+                                                                                                "type":  "main",
+                                                                                                "index":  0
+                                                                                            }
+                                                                                        ]
+                                                                                    ]
+                                                                       },
+                        "Code":  {
+                                     "main":  [
+                                                  [
+                                                      {
+                                                          "node":  "Supabase Vector Store",
+                                                          "type":  "main",
+                                                          "index":  0
+                                                      }
+                                                  ]
+                                              ]
+                                 },
+                        "Default Data Loader":  {
+                                                    "ai_document":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "Supabase Vector Store",
+                                                                                "type":  "ai_document",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                },
+                        "Postgres Chat Memory":  {
+                                                     "ai_memory":  [
+                                                                       [
+                                                                           {
+                                                                               "node":  "AI Agent",
+                                                                               "type":  "ai_memory",
+                                                                               "index":  0
+                                                                           }
+                                                                       ]
+                                                                   ]
+                                                 },
+                        "Knowledge Base":  {
+                                               "ai_tool":  [
+                                                               [
+                                                                   {
+                                                                       "node":  "AI Agent",
+                                                                       "type":  "ai_tool",
+                                                                       "index":  0
+                                                                   }
+                                                               ]
+                                                           ]
+                                           },
+                        "Get row(s) in sheet":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Code",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "Embeddings Google Gemini":  {
+                                                         "ai_embedding":  [
+                                                                              [
+                                                                                  {
+                                                                                      "node":  "Knowledge Base",
+                                                                                      "type":  "ai_embedding",
+                                                                                      "index":  0
+                                                                                  }
+                                                                              ]
+                                                                          ]
+                                                     },
+                        "Embeddings Google Gemini1":  {
+                                                          "ai_embedding":  [
+                                                                               [
+                                                                                   {
+                                                                                       "node":  "Supabase Vector Store",
+                                                                                       "type":  "ai_embedding",
+                                                                                       "index":  0
+                                                                                   }
+                                                                               ]
+                                                                           ]
+                                                      }
+                    },
+    "active":  false,
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "binaryMode":  "separate"
+                 },
+    "meta":  {
+                 "templateCredsSetupCompleted":  false
+             },
+    "tags":  [
+
+             ]
+}
