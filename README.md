@@ -6,6 +6,10 @@ The project is intentionally practical: the frontend is a clean chat interface, 
 
 ## Screenshots
 
+### Live Chat Interface
+
+The deployed app presents Aria as a hotel concierge chat assistant. Guests can ask about policies, room types, amenities, and nearby details.
+
 ### Room Recommendation
 
 ![Aria room recommendation](assets/readme/room-recommendation.png)
@@ -17,6 +21,30 @@ The project is intentionally practical: the frontend is a clean chat interface, 
 ### Recommendation Form
 
 ![Aria recommendation form](assets/readme/recommendation-form.png)
+
+### n8n Workflow Overview
+
+The backend is handled through n8n. The workflow has two parts: one path seeds hotel knowledge into Supabase, and the other path receives chat messages through a webhook and returns the AI response.
+
+![n8n workflow overview](assets/readme/n8n-workflow-overview.png)
+
+### Successful n8n Executions
+
+The workflow has been tested through the published webhook. Successful executions show the webhook, AI Agent, memory, knowledge-base tool, and response formatting working together.
+
+![n8n successful executions](assets/readme/n8n-successful-executions.png)
+
+### Gemini Free-Tier Limit
+
+The project uses a free-tier Gemini key. If the model receives too many requests, n8n may show a temporary Gemini service limit error.
+
+![Gemini free tier limit](assets/readme/gemini-free-tier-limit.png)
+
+### n8n Deployment
+
+n8n is hosted as a Railway deployment with the primary service, worker, Postgres, and Redis online.
+
+![Railway n8n deployment](assets/readme/railway-n8n-deployment.png)
 
 ## What It Does
 
@@ -101,6 +129,15 @@ Hotel AI Assistant - Webhook RAG Agent.last-node-fixed.json
 
 That version avoids manual JSON inside a `Respond to Webhook` node. The AI output is formatted in a separate node, then returned as the final webhook response.
 
+In the deployed version, n8n is running on Railway. The workflow uses:
+
+- A published webhook endpoint for the React app.
+- Gemini 2.5 Flash as the chat model.
+- Postgres Chat Memory to keep per-session context.
+- Supabase Vector Store as the hotel knowledge base.
+- Gemini embeddings for document retrieval.
+- A Format Response node so the final webhook output is easy for the frontend to read.
+
 Before using the sanitized template, reconnect these credentials in n8n:
 
 - Google Gemini API credentials
@@ -183,3 +220,5 @@ ChatbotRAG/
 This was built as a focused RAG chatbot for a hotel setting, not as a generic chatbot shell. The UI is designed around a guest conversation: policies, rooms, amenities, nearby attractions, and recommendation requests.
 
 The n8n workflow is the important backend piece. It receives the guest message, passes it to an AI agent, lets the agent retrieve hotel facts from Supabase, keeps conversation context with Postgres memory, and sends the result back to the React app.
+
+This project uses a free-tier Gemini API key. If the assistant stops responding during repeated testing, it may be because the Gemini quota or rate limit has been temporarily reached. The app and workflow are functional, but response availability depends on that free-tier limit.
